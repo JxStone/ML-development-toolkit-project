@@ -6,7 +6,9 @@ This project involves applying tensorflow and pytorch to the Chinese-MNIST datas
 between ML development toolkits and Software Engineering topics.
 
 ### How to run
-# install python 3.6 or above
-# install tensorflow using the command "pip install tensorflow"
-# in project root directory, run command "python tf_mnist.py"
+### install python 3.6 or above
+### install tensorflow using the command 
+# pip install tensorflow
+### in project root directory, run command 
+# python tf_mnist.py
 
