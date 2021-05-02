@@ -21,11 +21,6 @@ def create_file_name(x):
     file_name = f'input_{x[0]}_{x[1]}_{x[2]}.jpg'
     return file_name
 
-def add_filenames(df, img_root):
-    filenames = list(os.listdir(img_root))
-    df['filenames'] = df.apply(create_file_name, axis=1)
-    return df 
-
 # check for missing data
 def missing_data(data):
     total = data.isnull().sum().sort_values(ascending = False)
@@ -43,7 +38,7 @@ def create_datasets(df, img_root, img_size, n):
     df = pd.get_dummies(df['character'])
     return imgs, df
 
-def get_lr_callback(batch_size=32, plot=False):
+def get_lr_callback(batch_size=32, plot=False, epochs=50):
     lr_start   = 0.003
     lr_max     = 0.00125 * batch_size
     lr_min     = 0.001
@@ -65,7 +60,7 @@ def get_lr_callback(batch_size=32, plot=False):
 
     lr_callback = tf.keras.callbacks.LearningRateScheduler(lrfn, verbose=False)
     if plot == True:
-        rng = [i for i in range(50)]
+        rng = [i for i in range(epochs)]
         y = [lrfn(x) for x in rng]
         plt.plot(rng, y)
         plt.xlabel('epoch', size=14); plt.ylabel('learning_rate', size=14)
@@ -118,6 +113,16 @@ def main():
     input_shape = (IMG_SIZE, IMG_SIZE, 1)
 
     model = Sequential()
+    # model.add(Conv2D(16, kernel_size=3, input_shape=input_shape, activation='relu', padding='same'))
+    # model.add(Conv2D(16, kernel_size=3, activation='relu', padding='same'))
+    # model.add(MaxPool2D(2))
+    # model.add(Dropout(0.5))
+    # model.add(Conv2D(16, kernel_size=3, activation='relu', padding='same'))
+    # model.add(Conv2D(16, kernel_size=3, activation='relu', padding='same'))
+    # model.add(Dropout(0.5))
+    # model.add(Flatten())
+    # model.add(Dense(train_y.columns.size, activation='softmax'))
+
     model.add(Conv2D(16, kernel_size=3, padding='same', input_shape=input_shape, activation='relu'))
     model.add(Conv2D(16, kernel_size=3, padding='same', activation='relu'))
     model.add(BatchNormalization())
@@ -136,7 +141,7 @@ def main():
 
     print(model.summary())
 
-    get_lr_callback(plot=True)
+    get_lr_callback(plot=True, epochs=EPOCHS)
 
     es_callback = tf.keras.callbacks.EarlyStopping(patience=20, 
                                                verbose=1, 
