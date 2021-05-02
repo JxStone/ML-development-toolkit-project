@@ -33,7 +33,7 @@ def missing_data(data):
 
 def create_datasets(df, img_root, img_size, n):
     imgs = []
-    for filename in tqdm(df['filenames']):
+    for filename in tqdm(df['file']):
         img = io.imread(img_root+filename)
         img = transform.resize(img, (img_size,img_size,n))
         imgs.append(img)
@@ -78,7 +78,7 @@ def main():
     EPOCHS = 50
     BATCH_SIZE = 32
     IMG_SIZE = 64
-    IMG_ROOT = 'chinese-mnist/data/data/'
+    IMG_PATH = 'chinese-mnist/data/data/'
     data_df = pd.read_csv('chinese-mnist/chinese_mnist.csv')
 
     seed_everything(SEED)
@@ -86,7 +86,11 @@ def main():
     # check for missing values
     print(missing_data(data_df))
 
-    train_df = add_filenames(data_df, IMG_ROOT)
+    # explore image data
+    image_files = list(os.listdir(IMG_PATH))
+    print("Number of image files: {}".format(len(image_files)))
+
+    data_df["file"] = data_df.apply(create_file_name, axis=1)
 
     # check suites of the image
     print(f"Number of suites: {data_df.suite_id.nunique()}")
@@ -96,18 +100,18 @@ def main():
     print(f"Numbers: {data_df.value.nunique()}: {list(data_df.value.unique())}")
 
     # create dataset
-    train_df, test_df = train_test_split(train_df, 
+    train_df, test_df = train_test_split(data_df, 
                                      test_size=0.2,
                                      random_state=SEED,
-                                     stratify=train_df['character'].values) 
+                                     stratify=data_df['character'].values) 
     train_df, val_df = train_test_split(train_df,
                                     test_size=0.1,
                                     random_state=SEED,
                                     stratify=train_df['character'].values)
 
-    train_X, train_y = create_datasets(train_df, IMG_ROOT, IMG_SIZE, 1)
-    val_X, val_y = create_datasets(val_df, IMG_ROOT, IMG_SIZE, 1)
-    test_X, test_y = create_datasets(test_df, IMG_ROOT, IMG_SIZE, 1)
+    train_X, train_y = create_datasets(train_df, IMG_PATH, IMG_SIZE, 1)
+    val_X, val_y = create_datasets(val_df, IMG_PATH, IMG_SIZE, 1)
+    test_X, test_y = create_datasets(test_df, IMG_PATH, IMG_SIZE, 1)
 
     # build a neural network model, add layers, apply label smoothing and add learning rate scheduler
     input_shape = (IMG_SIZE, IMG_SIZE, 1)
@@ -138,7 +142,7 @@ def main():
                                                restore_best_weights=True)
 
     # fit the model with training set and validation set
-    history = model.fit(train_X, 
+    train_model = model.fit(train_X, 
                         train_y, 
                         batch_size=BATCH_SIZE, 
                         epochs=EPOCHS, 
@@ -146,11 +150,11 @@ def main():
                         validation_data=(val_X, val_y))
 
     # plot accuracy and loss
-    df1 = pd.DataFrame(history.history)[['accuracy', 'val_accuracy']]
-    df1.plot(x='Epoch', y='Accuracy', title='Epoch vs. Accuracy')
-    df2 = pd.DataFrame(history.history)[['loss', 'val_loss']]
-    df2.plot(x='Epoch', y='Loss', title='Epoch vs. Loss')
-    plt.show()
+    # df1 = pd.DataFrame(history.history)[['accuracy', 'val_accuracy']]
+    # df1.plot(x='Epoch', y='Accuracy', title='Epoch vs. Accuracy')
+    # df2 = pd.DataFrame(history.history)[['loss', 'val_loss']]
+    # df2.plot(x='Epoch', y='Loss', title='Epoch vs. Loss')
+    # plt.show()
 
     print(model.evaluate(test_X, test_y))
 
