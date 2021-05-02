@@ -2,13 +2,14 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from skimage import io, transform
-from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras.layers import *
 from tensorflow.keras.models import Sequential
 from tqdm import tqdm
+from skimage import io, transform
+from sklearn.model_selection import train_test_split
+
 
 # set random seed
 def seed_everything(seed):
@@ -150,11 +151,19 @@ def main():
                         validation_data=(val_X, val_y))
 
     # plot accuracy and loss
-    # df1 = pd.DataFrame(history.history)[['accuracy', 'val_accuracy']]
-    # df1.plot(x='Epoch', y='Accuracy', title='Epoch vs. Accuracy')
-    # df2 = pd.DataFrame(history.history)[['loss', 'val_loss']]
-    # df2.plot(x='Epoch', y='Loss', title='Epoch vs. Loss')
-    # plt.show()
+    df1 = pd.DataFrame(train_model.history)[['accuracy', 'val_accuracy']].plot()
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title('Epoch vs. Accuracy')
+    plt.legend()
+
+    df2 = pd.DataFrame(train_model.history)[['loss', 'val_loss']].plot()
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Epoch vs. Loss')
+    plt.legend()
+
+    plt.show()
 
     print(model.evaluate(test_X, test_y))
 
