@@ -4,11 +4,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow_addons as tfa
+import cv2 as cv
 from tensorflow.keras.layers import *
 from tensorflow.keras.models import Sequential
 from tqdm import tqdm
 from skimage import io, transform
 from sklearn.model_selection import train_test_split
+from sklearn import metrics
 
 
 # set random seed
@@ -34,9 +36,9 @@ def create_datasets(df, img_root, img_size, n):
         img = transform.resize(img, (img_size,img_size,n))
         imgs.append(img)
         
-    imgs = np.array(imgs)
-    df = pd.get_dummies(df['character'])
-    return imgs, df
+    X = np.array(imgs)
+    y = pd.get_dummies(df['character'])
+    return X, y
 
 def get_lr_callback(batch_size=32, plot=False, epochs=50):
     lr_start   = 0.003
@@ -68,6 +70,17 @@ def get_lr_callback(batch_size=32, plot=False, epochs=50):
         plt.show()
     return lr_callback
 
+def show_images(df, isTest=False, path='chinese-mnist/data/data/'):
+    f, ax = plt.subplots(10,15, figsize=(15,10))
+    for i,idx in enumerate(df.index):
+        dd = df.iloc[idx]
+        image_name = dd['file']
+        image_path = os.path.join(path, image_name)
+        img_data = cv.imread(image_path)
+        ax[i//15, i%15].imshow(img_data)
+        ax[i//15, i%15].axis('off')
+    plt.show()
+
 def main():
     # set configuration and read metadata
     SEED = 42
@@ -94,6 +107,10 @@ def main():
     print(f"Characters codes: {data_df.code.nunique()}: {list(data_df.code.unique())}")
     print(f"Characters: {data_df.character.nunique()}: {list(data_df.character.unique())}")
     print(f"Numbers: {data_df.value.nunique()}: {list(data_df.value.unique())}")
+
+    # show sample images
+    df = data_df.loc[data_df.suite_id==20].sort_values(by=["sample_id","value"]).reset_index()
+    show_images(df)
 
     # create dataset
     train_df, test_df = train_test_split(data_df, 
@@ -170,7 +187,14 @@ def main():
 
     plt.show()
 
-    print(model.evaluate(test_X, test_y))
+    # evaluation metrics
+    pred = model.predict(test_X)
+    y_pred = np.argmax(pred, axis=1)
+    y_true = np.argmax(test_y.values, axis=1)
+    print(metrics.classification_report(y_true, y_pred, target_names=test_y.columns))
+
+    result = model.evaluate(test_X, test_y)
+    print('Loss function: %s, accuracy:' % result[0], result[1])
 
 if __name__ == '__main__':
     main()
