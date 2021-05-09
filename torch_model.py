@@ -7,6 +7,7 @@ import torchvision
 from torchvision.datasets import ImageFolder
 import torch.nn as nn
 import tf_mnist
+from torch.utils.data import Dataset, DataLoader
 
 class ConvolutionNetwork(nn.Module):
     def __init__(self):
