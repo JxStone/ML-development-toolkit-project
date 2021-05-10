@@ -37,7 +37,7 @@ def create_datasets(df, img_root, img_size, n):
         imgs.append(img)
         
     X = np.array(imgs)
-    y = pd.get_dummies(df['character'])
+    y = df['character']
     return X, y
 
 def get_lr_callback(batch_size=32, plot=False, epochs=50):

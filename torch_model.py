@@ -23,7 +23,7 @@ class ConvolutionNetwork(nn.Module):
         self.maxP1 = nn.MaxPool2d(3)
         self.drop1 = nn.Dropout2d(0.2)
 
-        self.conv3 = nn.Conv2d(1, 16, kernel_size=3)
+        self.conv3 = nn.Conv2d(16, 16, kernel_size=3)
         self.relu3 = nn.ReLU()
         self.conv4 = nn.Conv2d(16, 16, kernel_size=3)
         self.relu4 = nn.ReLU()
@@ -32,7 +32,7 @@ class ConvolutionNetwork(nn.Module):
         self.drop2 = nn.Dropout2d(0.2)
 
         self.flat = nn.Flatten()
-        # self.dense = nn.Linear(, 15)
+        self.dense = nn.Linear(400, 15)
         self.soft = nn.Softmax()
 
 
@@ -54,6 +54,20 @@ class ConvolutionNetwork(nn.Module):
         x = self.drop2(x)
 
         x = self.flat(x)
-        print(x.size)
+        x = self.dense(x)
         x = self.soft(x)
         return x
+
+
+class Dataset(Dataset):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __len__(self):
+        return len(self.x)
+
+    def __getitem__(self, index):
+        img = self.x[index]
+        label = self.y[index]
+        return img, label-1
