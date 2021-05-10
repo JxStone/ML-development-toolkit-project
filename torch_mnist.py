@@ -153,6 +153,9 @@ def main():
 
     plt.figure(1)
     plt.plot(epochs, accuracy)
+    plt.title('Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
     plt.show()
 
 if __name__ == '__main__':
