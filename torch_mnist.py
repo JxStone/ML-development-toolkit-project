@@ -9,7 +9,7 @@ import torch.nn as nn
 from tf_mnist import *
 from torch_model import *
 from sklearn.model_selection import train_test_split
-
+import matplotlib.pyplot as plt
 
 def create_datasets(df, img_root, img_size):
     imgs = []
@@ -35,7 +35,7 @@ def main():
     # plt.show()
 
     SEED = 42
-    EPOCHS = 5
+    EPOCHS = 50
     BATCH_SIZE = 32
     IMG_SIZE = 64
     IMG_PATH = 'chinese-mnist/data/data/'
@@ -61,7 +61,7 @@ def main():
                                         random_state=SEED,
                                         stratify=train_df['character'].values)
 
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_X, train_y = create_datasets(train_df, IMG_PATH, IMG_SIZE)
     val_X, val_y = create_datasets(val_df, IMG_PATH, IMG_SIZE)
     test_X, test_y = create_datasets(test_df, IMG_PATH, IMG_SIZE)
@@ -75,11 +75,16 @@ def main():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
     criterion = nn.CrossEntropyLoss()
 
+    train_loss = []
+    valid_loss = []
+    accuracy = []
     # train the model and evaluate using validation set
     model.train()
     train_dataloader = torch.utils.data.DataLoader(Dataset(train_X, train_y), batch_size=BATCH_SIZE, shuffle=True)
     val_dataloader = torch.utils.data.DataLoader(Dataset(val_X, val_y), batch_size=BATCH_SIZE, shuffle=True)
     for epoch in range(EPOCHS):
+        # keep the loss for each epoch
+        train_eploss = 0
         for i, data in enumerate(train_dataloader):
             model.train()
             optimizer.zero_grad()
@@ -88,12 +93,13 @@ def main():
             output = model(inputs_data.to(device).type(torch.float))
             batch_label = torch.stack(list(batch_label), dim=0)
             loss = criterion(output, batch_label.to(device))
+            train_eploss += loss.item()
             loss.backward()
             optimizer.step()
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, (i+1) * BATCH_SIZE, len(train_dataloader.dataset),
                 100. * i / len(train_dataloader), loss.item()))
-
+        train_loss.append(train_eploss/len(train_dataloader.dataset))
         # validation set
         model.eval()
         val_loss = 0
@@ -105,7 +111,10 @@ def main():
                 val_loss += criterion(output, target).item()  # sum up batch loss
                 pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
+        accuracy.append(correct/len(val_dataloader.dataset))
         val_loss /= len(val_dataloader.dataset)
+        valid_loss.append(val_loss)
+        print("Validation set loss is " + str(val_loss))
 
 
     # test
@@ -126,6 +135,25 @@ def main():
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_dataloader.dataset),
         100. * correct / len(test_dataloader.dataset)))
+
+
+    # plot the data
+    epochs = np.arange(0, EPOCHS)
+    print(train_loss)
+    print(valid_loss)
+    print(epochs)
+    plt.figure(0)
+    plt.plot(epochs, train_loss, 'g', label='Training loss')
+    plt.plot(epochs, valid_loss, 'b', label='validation loss')
+    plt.title('Training and Validation loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
+
+    plt.figure(1)
+    plt.plot(epochs, accuracy)
+    plt.show()
 
 if __name__ == '__main__':
     main()
